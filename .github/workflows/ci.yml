@@ -22,9 +22,9 @@ jobs:
           - rust_host: x86_64-pc-windows-gnu
             os: windows-2019
           - rust_host: x86_64-apple-darwin
-            os: windows-2019
-          - rust_host: x86_64-unknown-linux-gnu
             os: macOS-10.14
+          - rust_host: x86_64-unknown-linux-gnu
+            os: ubuntu-18.04
           - rust_host: x86_64-unknown-linux-musl
             os: ubuntu-18.04
     runs-on: ${{ matrix.os }}
@@ -34,26 +34,34 @@ jobs:
       run: |
         curl -sSf --tlsv1.2 --proto =https -o ./rustup-init.exe https://win.rustup.rs/x86_64
         .\rustup-init.exe -y --no-modify-path --default-host ${{ matrix.rust_host }} --default-toolchain stable
+        rustup self update
+        rustup update stable
         %USERPROFILE%\.cargo\bin\rustup.exe component add clippy rustfmt
       if: matrix.os == 'windows-2019'
     - name: rustup-init (Unix)
       run: |
         curl -sSf --tlsv1.2 --proto '=https' -o ./rustup-init https://sh.rustup.rs
         bash ./rustup-init -y --no-modify-path --default-host ${{ matrix.rust_host }} --default-toolchain stable
+        rustup self update
+        rustup update stable
         ~/.cargo/bin/rustup component add clippy rustfmt
       if: matrix.os != 'windows-2019'
-    - name: Display versinos
+    - name: Display versions
       run: |
-        sed 's/:/\n/g' <<< "$PATH"
-        echo '$HOME='"$HOME"
-        echo '$USERPROFILE='"$USERPROFILE"
-        PATH="$HOME/.cargo/bin:$PATH"
-        sed 's/:/\n/g' <<< "$PATH"
         which cargo
+        echo
+        which jq
+        echo
         rustc --version --verbose
+        echo
         cargo --version --verbose
+        echo
         cargo clippy --version
+        echo
         rustfmt --version
+        echo
+        cargo metadata --format-version 1 |
+          jq -r '.workspace_members[] as $members | .packages[] | select(.id == $members) | .targets[].src_path'
       shell: bash
     - name: cargo fmt -- --check
       run: |
