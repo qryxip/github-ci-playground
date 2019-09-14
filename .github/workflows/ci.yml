@@ -47,13 +47,13 @@ jobs:
     - name: Display versions
       run: |
         PATH="$HOME/.cargo/bin:$PATH"
-        rustc --version --verbose
+        rustc -Vv
         echo
-        cargo --version --verbose
+        cargo -Vv
         echo
-        cargo clippy --version
+        cargo clippy -V
         echo
-        rustfmt --version
+        rustfmt -V
       shell: bash
     - name: cargo fmt -- --check
       run: |
@@ -70,10 +70,8 @@ jobs:
             jq -r '.workspace_members[] as $members | .packages[] | select(.id == $members) | .targets[].src_path'
         )"
         if type cygpath > /dev/null 2>&1; then
-          echo "$workspace_members" | xargs cygpath -u
           echo "$workspace_members" | xargs cygpath -u | xargs touch
         else
-          echo "$workspace_members"
           echo "$workspace_members" | xargs touch
         fi
         cargo clippy --all --all-targets -- -D warnings
