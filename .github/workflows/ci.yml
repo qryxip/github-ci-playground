@@ -46,6 +46,7 @@ jobs:
       if: matrix.os != 'windows-2019'
     - name: Display versions
       run: |
+        PATH="$HOME/.cargo/bin:$PATH"
         which cargo
         echo
         which jq
