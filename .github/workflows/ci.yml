@@ -34,16 +34,14 @@ jobs:
       run: |
         curl -sSf --tlsv1.2 --proto =https -o ./rustup-init.exe https://win.rustup.rs/x86_64
         .\rustup-init.exe -y --no-modify-path --default-host ${{ matrix.rust_host }} --default-toolchain stable
-        rustup self update
-        rustup update stable
+        %USERPROFILE%\.cargo\bin\rustup update stable
         %USERPROFILE%\.cargo\bin\rustup.exe component add clippy rustfmt
       if: matrix.os == 'windows-2019'
     - name: rustup-init (Unix)
       run: |
         curl -sSf --tlsv1.2 --proto '=https' -o ./rustup-init https://sh.rustup.rs
         bash ./rustup-init -y --no-modify-path --default-host ${{ matrix.rust_host }} --default-toolchain stable
-        rustup self update
-        rustup update stable
+        ~/.cargo/bin/rustup update stable
         ~/.cargo/bin/rustup component add clippy rustfmt
       if: matrix.os != 'windows-2019'
     - name: Display versions
