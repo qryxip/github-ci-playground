@@ -64,10 +64,16 @@ jobs:
       run: |
         PATH="$HOME/.cargo/bin:$PATH"
         # A hack to avoid IRC
-        cargo check --all --all-targets &&
-        cargo metadata --format-version 1 |
-          jq -r '.workspace_members[] as $members | .packages[] | select(.id == $members) | .targets[].src_path' |
-          xargs touch
+        cargo check --all --all-targets
+        workspace_members=cargo metadata --format-version 1 |
+          jq -r '.workspace_members[] as $members | .packages[] | select(.id == $members) | .targets[].src_path'
+        if type cygpath > /dev/null 2>&1; then
+          echo "$workspace_members" | cygpath
+          echo "$workspace_members" | cygpath | xargs touch
+        else
+          echo "$workspace_members"
+          echo "$workspace_members" | xargs touch
+        fi
         ls -la
         ls -la ./src
         cargo clippy --all --all-targets -- -D warnings
