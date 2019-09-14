@@ -1,0 +1,77 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+jobs:
+  test:
+    strategy:
+      matrix:
+        rust_host:
+          - x86_64-pc-windows-msvc
+          - x86_64-pc-windows-gnu
+          - x86_64-apple-darwin
+          - x86_64-unknown-linux-gnu
+          - x86_64-unknown-linux-musl
+        include:
+          - rust_host: x86_64-pc-windows-msvc
+            os: windows-2019
+          - rust_host: x86_64-pc-windows-gnu
+            os: windows-2019
+          - rust_host: x86_64-apple-darwin
+            os: windows-2019
+          - rust_host: x86_64-unknown-linux-gnu
+            os: macOS-10.14
+          - rust_host: x86_64-unknown-linux-musl
+            os: ubuntu-18.04
+    runs-on: ${{ matrix.os }}
+    steps:
+    - uses: actions/checkout@v1
+    - name: rustup-init (Windows)
+      run: |
+        curl -sSf --tlsv1.2 --proto =https -o ./rustup-init.exe https://win.rustup.rs/x86_64
+        .\rustup-init.exe -y --no-modify-path --default-host ${{ matrix.rust_host }} --default-toolchain stable
+        %USERPROFILE%\.cargo\bin\rustup.exe component add clippy rustfmt
+      if: matrix.os == 'windows-2019'
+    - name: rustup-init (Unix)
+      run: |
+        curl -sSf --tlsv1.2 --proto '=https' -o ./rustup-init https://sh.rustup.rs
+        bash ./rustup-init -y --no-modify-path --default-host ${{ matrix.rust_host }} --default-toolchain stable
+        ~/.cargo/bin/rustup component add clippy rustfmt
+      if: matrix.os != 'windows-2019'
+    - name: Display versinos
+      run: |
+        sed 's/:/\n/g' <<< "$PATH"
+        echo '$HOME='"$HOME"
+        echo '$USERPROFILE='"$USERPROFILE"
+        PATH="$HOME/.cargo/bin:$PATH"
+        sed 's/:/\n/g' <<< "$PATH"
+        which cargo
+        rustc --version --verbose
+        cargo --version --verbose
+        cargo clippy --version
+        rustfmt --version
+      shell: bash
+    - name: cargo fmt -- --check
+      run: |
+        PATH="$HOME/.cargo/bin:$PATH"
+        cargo fmt --all -- --check
+      shell: bash
+    - name: cargo clippy
+      run: |
+        PATH="$HOME/.cargo/bin:$PATH"
+        # A hack to avoid IRC
+        cargo check --all --all-targets &&
+        cargo metadata --format-version 1 |
+          jq -r '.workspace_members[] as $members | .packages[] | select(.id == $members) | .targets[].src_path' |
+          xargs touch
+        cargo clippy --all --all-targets -- -D warnings
+      shell: bash
+    - name: cargo test
+      run: |
+        PATH="$HOME/.cargo/bin:$PATH"
+        cargo test --all --all-targets
+      shell: bash
