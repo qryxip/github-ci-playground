@@ -17,15 +17,15 @@ jobs:
           - stable-x86_64-unknown-linux-gnu
           - stable-x86_64-unknown-linux-musl
         include:
-          - rust_host: stable-x86_64-pc-windows-msvc
+          - rust_toolchain: stable-x86_64-pc-windows-msvc
             os: windows-2019
-          - rust_host: stable-x86_64-pc-windows-gnu
+          - rust_toolchain: stable-x86_64-pc-windows-gnu
             os: windows-2019
-          - rust_host: stable-x86_64-apple-darwin
+          - rust_toolchain: stable-x86_64-apple-darwin
             os: macOS-10.14
-          - rust_host: stable-x86_64-unknown-linux-gnu
+          - rust_toolchain: stable-x86_64-unknown-linux-gnu
             os: ubuntu-18.04
-          - rust_host: stable-x86_64-unknown-linux-musl
+          - rust_toolchain: stable-x86_64-unknown-linux-musl
             os: ubuntu-18.04
     runs-on: ${{ matrix.os }}
     steps:
@@ -42,14 +42,16 @@ jobs:
         run: |
           curl -sSf --tlsv1.2 --proto =https -o ./rustup-init.exe https://win.rustup.rs/x86_64
           .\rustup-init.exe -y --no-modify-path --default-toolchain none
-          %USERPROFILE%\.cargo\bin\rustup.exe default ${{ matrix.rust_host }}
+          %USERPROFILE%\.cargo\bin\rustup.exe default ${{ matrix.rust_toolchain }}
+          %USERPROFILE%\.cargo\bin\rustup.exe update ${{ matrix.rust_toolchain }}
           %USERPROFILE%\.cargo\bin\rustup.exe component add clippy rustfmt
         if: matrix.os == 'windows-2019'
       - name: rustup-init (Unix)
         run: |
           curl -sSf --tlsv1.2 --proto '=https' -o ./rustup-init https://sh.rustup.rs
           bash ./rustup-init -y --no-modify-path --default-toolchain none
-          ~/.cargo/bin/rustup default ${{ matrix.rust_host }}
+          ~/.cargo/bin/rustup default ${{ matrix.rust_toolchain }}
+          ~/.cargo/bin/rustup update ${{ matrix.rust_toolchain }}
           ~/.cargo/bin/rustup component add clippy rustfmt
         if: matrix.os != 'windows-2019'
       - name: Display versions
