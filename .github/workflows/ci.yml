@@ -44,8 +44,9 @@ jobs:
         run: |
           if [ ${{ matrix.rust_triple }} = x86_64-unknown-linux-musl ]; then
             rust_musl_builder="$(docker run -id -v "$(pwd):/home/rust/src" ekidd/rust-musl-builder)"
-            echo "alias rustup='docker exec $rust_musl_builder rustup'" >> /tmp/rc.bash
-            echo "alias cargo='docker exec $rust_musl_builder cargo'" >> /tmp/rc.bash
+            echo "alias rustup='docker exec $rust_musl_builder rustup'" > /tmp/rc.bash
+            echo "alias cargo='docker exec $rust_musl_builder cargo +${{ matrix.rust_version }}'" >> /tmp/rc.bash
+            echo "target_x86_64_unknown_linux_musl='--target x86_64-unknown-linux-musl'" >> /tmp/rc.bash
           else
             curl -sSf --tlsv1.2 --proto '=https' -o ./rustup-init https://sh.rustup.rs
             bash ./rustup-init -y --no-modify-path --default-toolchain none
@@ -54,9 +55,7 @@ jobs:
           source /tmp/rc.bash
           rustup update ${{ matrix.rust_version }}-${{ matrix.rust_triple }}
           rustup component add --toolchain ${{ matrix.rust_version }}-${{ matrix.rust_triple }} clippy
-          if [ ${{ matrix.rust_triple }} = x86_64-unknown-linux-musl ]; then
-            rustup default ${{ matrix.rust_version }}-x86_64-unknown-linux-gnu
-          else
+          if [ ${{ matrix.rust_triple }} != x86_64-unknown-linux-musl ]; then
             rustup default ${{ matrix.rust_version }}-${{ matrix.rust_triple }}
             rustup component add rustfmt
           fi
@@ -89,10 +88,8 @@ jobs:
       - name: cargo clippy
         run: |
           source /tmp/rc.bash
-          type cargo || true
-          cargo --version || true
           # A hack to avoid IRC
-          cargo +${{ matrix.rust_version }} check --all --all-targets --target ${{ matrix.rust_triple }}
+          cargo check --all --all-targets $target_x86_64_unknown_linux_musl
           if [ ${{ matrix.os }} = windows-2019 ]; then
             to_unix_path='cygpath -u'
           else
@@ -102,17 +99,17 @@ jobs:
             jq -r '.workspace_members[] as $members | .packages[] | select(.id == $members) | .targets[].src_path' |
             xargs -n 1 $to_unix_path |
             xargs touch
-          cargo +${{ matrix.rust_version }} clippy --all --all-targets --target ${{ matrix.rust_triple }} -- -D warnings
+          cargo clippy --all --all-targets $target_x86_64_unknown_linux_musl -- -D warnings
         shell: bash
 
       - name: cargo test
         run: |
           source /tmp/rc.bash
-          cargo +${{ matrix.rust_version }} test --all --all-targets --target ${{ matrix.rust_triple }}
+          cargo test --all --all-targets $target_x86_64_unknown_linux_musl
         shell: bash
 
       - name: cargo run
         run: |
           source /tmp/rc.bash
-          cargo +${{ matrix.rust_version }} run --target ${{ matrix.rust_triple }}
+          cargo run $target_x86_64_unknown_linux_musl
         shell: bash
