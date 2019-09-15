@@ -20,17 +20,22 @@ jobs:
           - x86_64-unknown-linux-gnu
           - x86_64-unknown-linux-musl
         include:
-          - rust_triple: x86_64-pc-windows-msvc
+          - rust_version: stable
+            rust_triple: x86_64-pc-windows-msvc
             os: windows-2019
-          - rust_triple: x86_64-pc-windows-gnu
+          - rust_version: stable
+            rust_triple: x86_64-pc-windows-gnu
             os: windows-2019
-          - rust_triple: x86_64-apple-darwin
+          - rust_version: stable
+            rust_triple: x86_64-apple-darwin
             os: macOS-10.14
-          - rust_triple: x86_64-unknown-linux-gnu
+          - rust_version: stable
+            rust_triple: x86_64-unknown-linux-gnu
             os: ubuntu-18.04
-          - rust_triple: x86_64-unknown-linux-musl
+          - rust_version: stable
+            rust_triple: x86_64-unknown-linux-musl
             os: ubuntu-18.04
-    name: ${{ matrix.rust_version }}-${{ matrix.rust_toolchain }}
+    name: ${{ matrix.rust_version }}-${{ matrix.rust_triple }}
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v1
@@ -50,7 +55,9 @@ jobs:
           source ~/.bashrc
           rustup update ${{ matrix.rust_version }}-${{ matrix.rust_triple }}
           rustup component add --toolchain ${{ matrix.rust_version }}-${{ matrix.rust_triple }} clippy
-          if [ ${{ matrix.rust_triple }} != x86_64-unknown-linux-musl ]; then
+          if [ ${{ matrix.rust_triple }} = x86_64-unknown-linux-musl ]; then
+            rustup default ${{ matrix.rust_version }}-x86_64-unknown-linux-gnu
+          else
             rustup default ${{ matrix.rust_version }}-${{ matrix.rust_triple }}
             rustup component add rustfmt
           fi
@@ -69,7 +76,7 @@ jobs:
             echo -e '\n'
             rustfmt -V
             echo -e '\n'
-          else
+          fi
           bash --version
         shell: bash
 
