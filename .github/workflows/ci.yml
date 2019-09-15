@@ -38,6 +38,7 @@ jobs:
           if type rustup > /dev/null 2>&1; then
             rustup show
           fi
+        shell: bash
       - name: rustup-init (Windows)
         run: |
           curl -sSf --tlsv1.2 --proto =https -o ./rustup-init.exe https://win.rustup.rs/x86_64
