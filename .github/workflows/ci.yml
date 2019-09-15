@@ -43,10 +43,16 @@ jobs:
             rustup show
           fi
         shell: bash
-      - name: Install musl
+      - name: dpkg -L
         run: |
-          sudo apt install -y musl-dev musl-tools
-        shell: bash
+          sudo dpkg -L build-essential || true
+          sudo dpkg -L musl-dev || true
+          sudo dpkg -L musl-tools || true
+          sudo dpkg -L pkg-config || true
+          sudo dpkg -L libssl-dev || true
+        if: matrix.rust_toolchain == 'stable-x86_64-unknown-linux-musl'
+      - name: apt install
+        run: sudo apt install -y build-essential musl-tools pkg-config libssl-dev
         if: matrix.rust_toolchain == 'stable-x86_64-unknown-linux-musl'
       - name: rustup-init
         run: |
