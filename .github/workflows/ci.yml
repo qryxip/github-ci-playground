@@ -47,6 +47,7 @@ jobs:
             docker exec "$rust_musl_builder" ls -la
             docker exec "$rust_musl_builder" bash -c 'echo "$UID $GID"'
             echo "$UID $GID"
+            docker exec "$rust_musl_builder" sudo chown -R rust:rust .
             echo 'rustup() {' > /tmp/rc.bash
             echo "  docker exec $rust_musl_builder"' rustup "$@"' >> /tmp/rc.bash
             echo '}' >> /tmp/rc.bash
