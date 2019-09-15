@@ -51,7 +51,9 @@ jobs:
             echo "  docker exec $rust_musl_builder"' rustup "$@"' >> /tmp/rc.bash
             echo '}' >> /tmp/rc.bash
             echo 'cargo() {' >> /tmp/rc.bash
+            echo "  docker exec $rust_musl_builder sudo chown -R rust:rust ." >> /tmp/rc.bash
             echo "  docker exec $rust_musl_builder"' cargo +${{ matrix.rust_version }} "$@"' >> /tmp/rc.bash
+            echo "  sudo chmod -R $(whoami):$(whoami) ." >> /tmp/rc.bash
             echo '}' >> /tmp/rc.bash
             echo 'export -f rustup' >> /tmp/rc.bash
             echo 'export -f cargo' >> /tmp/rc.bash
