@@ -36,21 +36,8 @@ jobs:
         run: |
           sudo apt update
           sudo apt install -y \
-            build-essential \
-            cmake \
-            curl \
-            file \
-            git \
-            musl-dev \
             musl-tools \
-            libpq-dev \
-            libsqlite-dev \
-            libssl-dev \
-            linux-libc-dev \
-            pkgconf \
-            sudo \
-            xutils-dev \
-            gcc-multilib-arm-linux-gnueabihf
+            libgcc1
         if: matrix.rust_toolchain == 'stable-x86_64-unknown-linux-musl'
       - name: rustup-init
         run: |
