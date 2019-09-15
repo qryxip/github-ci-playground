@@ -44,8 +44,8 @@ jobs:
         run: |
           if [ ${{ matrix.rust_triple }} = x86_64-unknown-linux-musl ]; then
             rust_musl_builder="$(docker run -id -v "$(pwd):/home/rust/src" ekidd/rust-musl-builder)"
-            echo "rustup() { docker exec $rust_musl_builder rustup"' "$@" }' > /tmp/rc.bash
-            echo "cargo() { docker exec $rust_musl_builder cargo +${{ matrix.rust_version }} }"' "$@" ' >> /tmp/rc.bash
+            echo "rustup() { docker exec $rust_musl_builder"' rustup "$@" }' > /tmp/rc.bash
+            echo "cargo() { docker exec $rust_musl_builder"' cargo +${{ matrix.rust_version }} "$@" }' >> /tmp/rc.bash
             echo 'export -f rustup' >> /tmp/rc.bash
             echo 'export -f cargo' >> /tmp/rc.bash
             echo "export target_x86_64_unknown_linux_musl='--target x86_64-unknown-linux-musl'" >> /tmp/rc.bash
