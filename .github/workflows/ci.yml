@@ -44,15 +44,14 @@ jobs:
         run: |
           if [ ${{ matrix.rust_triple }} = x86_64-unknown-linux-musl ]; then
             rust_musl_builder="$(docker run -id -v "$(pwd):/home/rust/src" ekidd/rust-musl-builder)"
-            echo "alias rustup='docker exec $rust_musl_builder rustup'" >> ~/.bashrc
-            echo "alias cargo='docker exec $rust_musl_builder cargo'" >> ~/.bashrc
+            echo "alias rustup='docker exec $rust_musl_builder rustup'" >> /tmp/setup.bash
+            echo "alias cargo='docker exec $rust_musl_builder cargo'" >> /tmp/setup.bash
           else
             curl -sSf --tlsv1.2 --proto '=https' -o ./rustup-init https://sh.rustup.rs
             bash ./rustup-init -y --no-modify-path --default-toolchain none
-            echo 'export PATH="$HOME/.cargo/bin:$PATH"' >> ~/.bashrc
+            echo 'export PATH="$HOME/.cargo/bin:$PATH"' >> /tmp/setup.bash
           fi
-          cat ~/.bashrc
-          source ~/.bashrc
+          source /tmp/setup.bash
           rustup update ${{ matrix.rust_version }}-${{ matrix.rust_triple }}
           rustup component add --toolchain ${{ matrix.rust_version }}-${{ matrix.rust_triple }} clippy
           if [ ${{ matrix.rust_triple }} = x86_64-unknown-linux-musl ]; then
@@ -65,9 +64,7 @@ jobs:
 
       - name: Display versions
         run: |
-          cat ~/.bashrc
-          sed 's/:/\n/g' <<< "$PATH"
-          false
+          source /tmp/setup.bash
           echo -e '\n'
           if [ ${{ matrix.rust_triple }} != x86_64-unknown-linux-musl ]; then
             rustc -Vv
@@ -83,12 +80,15 @@ jobs:
         shell: bash
 
       - name: cargo fmt -- --check
-        run: cargo fmt --all -- --check
+        run: |
+          source /tmp/setup.bash
+          cargo fmt --all -- --check
         shell: bash
         if: matrix.rust_triple != 'x86_64-unknown-linux-musl'
 
       - name: cargo clippy
         run: |
+          source /tmp/setup.bash
           # A hack to avoid IRC
           cargo +${{ matrix.rust_version }} check --all --all-targets --target ${{ matrix.rust_triple }}
           if [ ${{ matrix.os }} = windows-2019 ]; then
@@ -104,9 +104,13 @@ jobs:
         shell: bash
 
       - name: cargo test
-        run: cargo +${{ matrix.rust_version }} test --all --all-targets --target ${{ matrix.rust_triple }}
+        run: |
+          source /tmp/setup.bash
+          cargo +${{ matrix.rust_version }} test --all --all-targets --target ${{ matrix.rust_triple }}
         shell: bash
 
       - name: cargo run
-        run: cargo +${{ matrix.rust_version }} run --target ${{ matrix.rust_triple }}
+        run: |
+          source /tmp/setup.bash
+          cargo +${{ matrix.rust_version }} run --target ${{ matrix.rust_triple }}
         shell: bash
