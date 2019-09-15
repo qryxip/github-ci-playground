@@ -51,7 +51,7 @@ jobs:
             bash ./rustup-init -y --no-modify-path --default-toolchain none
             echo 'export PATH="$HOME/.cargo/bin:$PATH"' >> ~/.bashrc
           fi
-          echo ~/.bashrc
+          cat ~/.bashrc
           source ~/.bashrc
           rustup update ${{ matrix.rust_version }}-${{ matrix.rust_triple }}
           rustup component add --toolchain ${{ matrix.rust_version }}-${{ matrix.rust_triple }} clippy
