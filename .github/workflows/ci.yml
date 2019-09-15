@@ -37,29 +37,20 @@ jobs:
         run: sudo apt install -y musl-tools lib32gcc1
         if: matrix.rust_toolchain == 'stable-x86_64-unknown-linux-musl'
 
-      - name: display /usr/lib
-        run: |
-          echo '$LD_LIBRARY_PATH='"$LD_LIBRARY_PATH"
-          type musl || true
-          ls -l /usr/lib
-        if: matrix.rust_toolchain == 'stable-x86_64-unknown-linux-musl'
-
-      - name: false
-        run: 'false'
-        shell: bash
-
-
       - name: rustup-init
         run: |
           curl -sSf --tlsv1.2 --proto '=https' -o ./rustup-init https://sh.rustup.rs
           bash ./rustup-init -y --no-modify-path --default-toolchain none
-          ~/.cargo/bin/rustup default ${{ matrix.rust_toolchain }}
-          ~/.cargo/bin/rustup update ${{ matrix.rust_toolchain }}
-          ~/.cargo/bin/rustup component add clippy rustfmt
+          export PATH="$HOME/.cargo/bin:$PATH"
+          rustup default ${{ matrix.rust_toolchain }}
+          rustup update ${{ matrix.rust_toolchain }}
+          rustup component add clippy rustfmt
         shell: bash
+
       - name: Display versions
         run: |
-          PATH="$HOME/.cargo/bin:$PATH"
+          export PATH="$HOME/.cargo/bin:$PATH"
+          if [ -d /usr/lib32 ]; then export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/usr/lib32"; fi
           rustup show
           echo -e '\n'
           rustc -Vv
@@ -72,14 +63,18 @@ jobs:
           echo -e '\n'
           bash --version
         shell: bash
+
       - name: cargo fmt -- --check
         run: |
-          PATH="$HOME/.cargo/bin:$PATH"
+          export PATH="$HOME/.cargo/bin:$PATH"
+          if [ -d /usr/lib32 ]; then export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/usr/lib32"; fi
           cargo fmt --all -- --check
         shell: bash
+
       - name: cargo clippy
         run: |
-          PATH="$HOME/.cargo/bin:$PATH"
+          export PATH="$HOME/.cargo/bin:$PATH"
+          if [ -d /usr/lib32 ]; then export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/usr/lib32"; fi
           # A hack to avoid IRC
           cargo check --all --all-targets
           if [ ${{ matrix.os }} = windows-2019 ]; then
@@ -93,13 +88,17 @@ jobs:
             xargs touch
           cargo clippy --all --all-targets -- -D warnings
         shell: bash
+
       - name: cargo test
         run: |
-          PATH="$HOME/.cargo/bin:$PATH"
+          export PATH="$HOME/.cargo/bin:$PATH"
+          if [ -d /usr/lib32 ]; then export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/usr/lib32"; fi
           cargo test --all --all-targets
         shell: bash
+
       - name: cargo run
         run: |
-          PATH="$HOME/.cargo/bin:$PATH"
+          export PATH="$HOME/.cargo/bin:$PATH"
+          if [ -d /usr/lib32 ]; then export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/usr/lib32"; fi
           cargo run
         shell: bash
