@@ -45,9 +45,8 @@ jobs:
           if [ ${{ matrix.rust_triple }} = x86_64-unknown-linux-musl ]; then
             rust_musl_builder="$(docker run -id -v "$(pwd):/home/rust/src:z" ekidd/rust-musl-builder)"
             docker exec "$rust_musl_builder" ls -la
-            docker exec "$rust_musl_builder" bash -c 'echo "$UID $GID"'
-            echo "$UID $GID"
-            docker exec "$rust_musl_builder" sudo chown -R rust:rust .
+            docker exec "$rust_musl_builder" sudo chown -R rust:rust /home/rust/src
+            docker exec "$rust_musl_builder" ls -la
             echo 'rustup() {' > /tmp/rc.bash
             echo "  docker exec $rust_musl_builder"' rustup "$@"' >> /tmp/rc.bash
             echo '}' >> /tmp/rc.bash
