@@ -11,41 +11,33 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        rust_toolchain:
-          - stable-x86_64-pc-windows-msvc
-          - stable-x86_64-pc-windows-gnu
-          - stable-x86_64-apple-darwin
-          - stable-x86_64-unknown-linux-gnu
-          - stable-x86_64-unknown-linux-musl
+        rust_version:
+          - stable
+        rust_triple:
+          - x86_64-pc-windows-msvc
+          - x86_64-pc-windows-gnu
+          - x86_64-apple-darwin
+          - x86_64-unknown-linux-gnu
+          - x86_64-unknown-linux-musl
         include:
-          - rust_toolchain: stable-x86_64-pc-windows-msvc
-            rust_toolchain_head: stable
-            rust_triple: x86_64-pc-windows-msvc
+          - rust_triple: x86_64-pc-windows-msvc
             os: windows-2019
-          - rust_toolchain: stable-x86_64-pc-windows-gnu
-            rust_toolchain_head: stable
-            rust_triple: x86_64-pc-windows-gnu
+          - rust_triple: x86_64-pc-windows-gnu
             os: windows-2019
-          - rust_toolchain: stable-x86_64-apple-darwin
-            rust_toolchain_head: stable
-            rust_triple: x86_64-apple-darwin
+          - rust_triple: x86_64-apple-darwin
             os: macOS-10.14
-          - rust_toolchain: stable-x86_64-unknown-linux-gnu
-            rust_toolchain_head: stable
-            rust_triple: x86_64-unknown-linux-gnu
+          - rust_triple: x86_64-unknown-linux-gnu
             os: ubuntu-18.04
-          - rust_toolchain: stable-x86_64-unknown-linux-musl
-            rust_toolchain_head: stable
-            rust_triple: x86_64-unknown-linux-musl
+          - rust_triple: x86_64-unknown-linux-musl
             os: ubuntu-18.04
-    name: ${{ matrix.rust_toolchain }}
+    name: ${{ matrix.rust_version }}-${{ matrix.rust_toolchain }}
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v1
 
       - name: rustup-init
         run: |
-          if [ ${{ matrix.rust_toolchain }} = stable-x86_64-unknown-linux-musl ]; then
+          if [ ${{ matrix.rust_triple }} = x86_64-unknown-linux-musl ]; then
             rust_musl_builder="$(docker run -id -v "$(pwd):/home/rust/src" ekidd/rust-musl-builder)"
             echo "alias rustup='docker exec $rust_musl_builder rustup'" >> ~/.bashrc
             echo "alias cargo='docker exec $rust_musl_builder cargo'" >> ~/.bashrc
@@ -56,58 +48,56 @@ jobs:
           fi
           echo ~/.bashrc
           source ~/.bashrc
-          rustup update ${{ matrix.rust_toolchain }}
-          rustup component add --toolchain ${{ matrix.rust_toolchain }} clippy
-          if [ ${{ matrix.rust_toolchain }} = stable-x86_64-unknown-linux-musl ]; then
-            rustup default stable-x86_64-unknown-linux-gnu
-          else
-            rustup default ${{ matrix.rust_toolchain }}
+          rustup update ${{ matrix.rust_version }}-${{ matrix.rust_triple }}
+          rustup component add --toolchain ${{ matrix.rust_version }}-${{ matrix.rust_triple }} clippy
+          if [ ${{ matrix.rust_triple }} != x86_64-unknown-linux-musl ]; then
+            rustup default ${{ matrix.rust_version }}-${{ matrix.rust_triple }}
             rustup component add rustfmt
-          else
+          fi
         shell: bash
 
       - name: Display versions
         run: |
           rustup show
           echo -e '\n'
-          if [ ${{ matrix.rust_toolchain }} != stable-x86_64-unknown-linux-musl ]; then
-            rustc +${{ matrix.rust_toolchain }} -Vv
+          if [ ${{ matrix.rust_triple }} != x86_64-unknown-linux-musl ]; then
+            rustc -Vv
             echo -e '\n'
-            cargo +${{ matrix.rust_toolchain }} -Vv
+            cargo -Vv
             echo -e '\n'
-            cargo +${{ matrix.rust_toolchain }} clippy -V
+            cargo clippy -V
             echo -e '\n'
-            rustfmt +${{ matrix.rust_toolchain }} -V
+            rustfmt -V
             echo -e '\n'
           else
           bash --version
         shell: bash
 
       - name: cargo fmt -- --check
-        run: cargo +${{ matrix.rust_toolchain }} fmt --all -- --check
+        run: cargo fmt --all -- --check
         shell: bash
-        if: matrix.rust_toolchain != 'stable-x86_64-unknown-linux-musl'
+        if: matrix.rust_triple != 'x86_64-unknown-linux-musl'
 
       - name: cargo clippy
         run: |
           # A hack to avoid IRC
-          cargo +${{ matrix.rust_toolchain_head }} check --all --all-targets --target ${{ matrix.rust_triple }}
+          cargo +${{ matrix.rust_version }} check --all --all-targets --target ${{ matrix.rust_triple }}
           if [ ${{ matrix.os }} = windows-2019 ]; then
             to_unix_path='cygpath -u'
           else
             to_unix_path=echo
           fi
-          cargo +${{ matrix.rust_toolchain_head }} metadata --format-version 1 |
+          cargo metadata --format-version 1 |
             jq -r '.workspace_members[] as $members | .packages[] | select(.id == $members) | .targets[].src_path' |
             xargs -n 1 $to_unix_path |
             xargs touch
-          cargo clippy --all --all-targets -- -D warnings
+          cargo +${{ matrix.rust_version }} clippy --all --all-targets --target ${{ matrix.rust_triple }} -- -D warnings
         shell: bash
 
       - name: cargo test
-        run: cargo +${{ matrix.rust_toolchain_head }} test --all --all-targets --target ${{ matrix.rust_triple }}
+        run: cargo +${{ matrix.rust_version }} test --all --all-targets --target ${{ matrix.rust_triple }}
         shell: bash
 
       - name: cargo run
-        run: cargo +${{ matrix.rust_toolchain_head }} run --target ${{ matrix.rust_triple }}
+        run: cargo +${{ matrix.rust_version }} run --target ${{ matrix.rust_triple }}
         shell: bash
