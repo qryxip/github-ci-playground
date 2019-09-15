@@ -43,12 +43,12 @@ jobs:
       - name: rustup-init
         run: |
           if [ ${{ matrix.rust_triple }} = x86_64-unknown-linux-musl ]; then
-            rust_musl_builder="$(sudo docker run -id -v "$(pwd):/home/rust/src" ekidd/rust-musl-builder)"
+            rust_musl_builder="$(docker run -id -v "$(pwd):/home/rust/src:Z" ekidd/rust-musl-builder)"
             echo 'rustup() {' > /tmp/rc.bash
-            echo "  sudo docker exec $rust_musl_builder"' rustup "$@"' >> /tmp/rc.bash
+            echo "  docker exec $rust_musl_builder"' rustup "$@"' >> /tmp/rc.bash
             echo '}' >> /tmp/rc.bash
             echo 'cargo() {' >> /tmp/rc.bash
-            echo "  sudo docker exec $rust_musl_builder"' cargo +${{ matrix.rust_version }} "$@"' >> /tmp/rc.bash
+            echo "  docker exec $rust_musl_builder"' cargo +${{ matrix.rust_version }} "$@"' >> /tmp/rc.bash
             echo '}' >> /tmp/rc.bash
             echo 'export -f rustup' >> /tmp/rc.bash
             echo 'export -f cargo' >> /tmp/rc.bash
