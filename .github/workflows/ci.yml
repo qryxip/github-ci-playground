@@ -43,6 +43,11 @@ jobs:
             rustup show
           fi
         shell: bash
+      - name: Install musl
+        run: |
+          apt install -y musl-dev musl-tools
+        shell: bash
+        if: matrix.rust_toolchain == 'stable-x86_64-unknown-linux-musl'
       - name: rustup-init
         run: |
           curl -sSf --tlsv1.2 --proto '=https' -o ./rustup-init https://sh.rustup.rs
