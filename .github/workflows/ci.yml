@@ -44,8 +44,8 @@ jobs:
         run: |
           if [ ${{ matrix.rust_triple }} = x86_64-unknown-linux-musl ]; then
             rust_musl_builder="$(docker run -id -v "$(pwd):/home/rust/src" ekidd/rust-musl-builder)"
-            echo "alias rustup='docker exec ミミミミミ rustup'" > /tmp/rc.bash
-            echo "alias cargo='docker exec ミミミミミ cargo +${{ matrix.rust_version }}'" >> /tmp/rc.bash
+            echo "alias rustup='docker exec $rust_musl_builder rustup'" > /tmp/rc.bash
+            echo "alias cargo='docker exec $rust_musl_builder cargo +${{ matrix.rust_version }}'" >> /tmp/rc.bash
             echo "target_x86_64_unknown_linux_musl='--target x86_64-unknown-linux-musl'" >> /tmp/rc.bash
           else
             curl -sSf --tlsv1.2 --proto '=https' -o ./rustup-init https://sh.rustup.rs
@@ -53,6 +53,12 @@ jobs:
             echo 'export PATH="$HOME/.cargo/bin:$PATH"' > /tmp/rc.bash
           fi
           source /tmp/rc.bash
+          echo
+          cat /tmp/rc.bash
+          echo
+          type rustup
+          type cargo
+          echo
           rustup update ${{ matrix.rust_version }}-${{ matrix.rust_triple }}
           rustup component add --toolchain ${{ matrix.rust_version }}-${{ matrix.rust_triple }} clippy
           if [ ${{ matrix.rust_triple }} != x86_64-unknown-linux-musl ]; then
