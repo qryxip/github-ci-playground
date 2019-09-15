@@ -70,8 +70,8 @@ jobs:
           else
             rustup default ${{ matrix.rust_version }}-${{ matrix.rust_triple }}
           fi
-          rustup update ${{ matrix.rust_version }}
-          rustup component add --toolchain ${{ matrix.rust_version }} clippy rustfmt
+          rustup update
+          rustup component add --toolchain clippy rustfmt
         shell: bash
 
       - name: Display versions
