@@ -33,11 +33,7 @@ jobs:
     steps:
       - uses: actions/checkout@v1
       - name: apt install
-        run: |
-          sudo apt update
-          sudo apt install -y \
-            musl-tools \
-            libgcc_s.so.1
+        run: sudo apt install -y musl-tools lib32gcc1
         if: matrix.rust_toolchain == 'stable-x86_64-unknown-linux-musl'
       - name: rustup-init
         run: |
