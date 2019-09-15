@@ -19,104 +19,95 @@ jobs:
           - stable-x86_64-unknown-linux-musl
         include:
           - rust_toolchain: stable-x86_64-pc-windows-msvc
+            rust_toolchain_head: stable
+            rust_triple: x86_64-pc-windows-msvc
             os: windows-2019
           - rust_toolchain: stable-x86_64-pc-windows-gnu
+            rust_toolchain_head: stable
+            rust_triple: x86_64-pc-windows-gnu
             os: windows-2019
           - rust_toolchain: stable-x86_64-apple-darwin
+            rust_toolchain_head: stable
+            rust_triple: x86_64-apple-darwin
             os: macOS-10.14
           - rust_toolchain: stable-x86_64-unknown-linux-gnu
+            rust_toolchain_head: stable
+            rust_triple: x86_64-unknown-linux-gnu
             os: ubuntu-18.04
           - rust_toolchain: stable-x86_64-unknown-linux-musl
+            rust_toolchain_head: stable
+            rust_triple: x86_64-unknown-linux-musl
             os: ubuntu-18.04
     name: ${{ matrix.rust_toolchain }}
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v1
 
-      - name: rustup update
+      - name: rustup-init
         run: |
           if [ ${{ matrix.rust_toolchain }} = stable-x86_64-unknown-linux-musl ]; then
-            run_rust_musl_builder='docker run --rm -it -v "$(pwd)":/home/rust/src ekidd/rust-musl-builder'
+            rust_musl_builder="$(docker run -id -v "$(pwd):/home/rust/src" ekidd/rust-musl-builder)"
+            echo "alias rustup='docker exec $rust_musl_builder rustup'" >> ~/.bashrc
+            echo "alias cargo='docker exec $rust_musl_builder cargo'" >> ~/.bashrc
           else
-            run_rust_musl_builder=''
-          fi
-          if [ ${{ matrix.os }} = macOS-10.14 ]; then
             curl -sSf --tlsv1.2 --proto '=https' -o ./rustup-init https://sh.rustup.rs
-            bash ./rustup-init -y --default-toolchain none
-            cat ~/.bashrc
+            bash ./rustup-init -y --no-modify-path --default-toolchain none
+            echo 'export PATH="$HOME/.cargo/bin:$PATH"' >> ~/.bashrc
           fi
-          $run_rust_musl_builder rustup default ${{ matrix.rust_toolchain }}
-          $run_rust_musl_builder rustup update ${{ matrix.rust_toolchain }}
-          $run_rust_musl_builder rustup component add clippy rustfmt
+          echo ~/.bashrc
+          source ~/.bashrc
+          rustup update ${{ matrix.rust_toolchain }}
+          rustup component add --toolchain ${{ matrix.rust_toolchain }} clippy
+          if [ ${{ matrix.rust_toolchain }} = stable-x86_64-unknown-linux-musl ]; then
+            rustup default stable-x86_64-unknown-linux-gnu
+          else
+            rustup default ${{ matrix.rust_toolchain }}
+            rustup component add rustfmt
+          else
         shell: bash
 
       - name: Display versions
         run: |
-          if [ ${{ matrix.rust_toolchain }} = stable-x86_64-unknown-linux-musl ]; then
-            run_rust_musl_builder='docker run --rm -it -v "$(pwd)":/home/rust/src ekidd/rust-musl-builder'
+          rustup show
+          echo -e '\n'
+          if [ ${{ matrix.rust_toolchain }} != stable-x86_64-unknown-linux-musl ]; then
+            rustc +${{ matrix.rust_toolchain }} -Vv
+            echo -e '\n'
+            cargo +${{ matrix.rust_toolchain }} -Vv
+            echo -e '\n'
+            cargo +${{ matrix.rust_toolchain }} clippy -V
+            echo -e '\n'
+            rustfmt +${{ matrix.rust_toolchain }} -V
+            echo -e '\n'
           else
-            run_rust_musl_builder=''
-          fi
-          $run_rust_musl_builder rustup show
-          echo -e '\n'
-          $run_rust_musl_builder rustc -Vv
-          echo -e '\n'
-          $run_rust_musl_builder cargo -Vv
-          echo -e '\n'
-          $run_rust_musl_builder cargo clippy -V
-          echo -e '\n'
-          $run_rust_musl_builder rustfmt -V
-          echo -e '\n'
           bash --version
         shell: bash
 
       - name: cargo fmt -- --check
-        run: |
-          if [ ${{ matrix.rust_toolchain }} = stable-x86_64-unknown-linux-musl ]; then
-            run_rust_musl_builder='docker run --rm -it -v "$(pwd)":/home/rust/src ekidd/rust-musl-builder'
-          else
-            run_rust_musl_builder=''
-          fi
-          $run_rust_musl_builder cargo fmt --all -- --check
+        run: cargo +${{ matrix.rust_toolchain }} fmt --all -- --check
         shell: bash
+        if: matrix.rust_toolchain != 'stable-x86_64-unknown-linux-musl'
 
       - name: cargo clippy
         run: |
-          if [ ${{ matrix.rust_toolchain }} = stable-x86_64-unknown-linux-musl ]; then
-            run_rust_musl_builder='docker run --rm -it -v "$(pwd)":/home/rust/src ekidd/rust-musl-builder'
-          else
-            run_rust_musl_builder=''
-          fi
           # A hack to avoid IRC
-          $run_rust_musl_builder cargo check --all --all-targets
+          cargo +${{ matrix.rust_toolchain_head }} check --all --all-targets --target ${{ matrix.rust_triple }}
           if [ ${{ matrix.os }} = windows-2019 ]; then
             to_unix_path='cygpath -u'
           else
             to_unix_path=echo
           fi
-          $run_rust_musl_builder cargo metadata --format-version 1 |
+          cargo +${{ matrix.rust_toolchain_head }} metadata --format-version 1 |
             jq -r '.workspace_members[] as $members | .packages[] | select(.id == $members) | .targets[].src_path' |
             xargs -n 1 $to_unix_path |
             xargs touch
-          $run_rust_musl_builder cargo clippy --all --all-targets -- -D warnings
+          cargo clippy --all --all-targets -- -D warnings
         shell: bash
 
       - name: cargo test
-        run: |
-          if [ ${{ matrix.rust_toolchain }} = stable-x86_64-unknown-linux-musl ]; then
-            run_rust_musl_builder='docker run --rm -it -v "$(pwd)":/home/rust/src ekidd/rust-musl-builder'
-          else
-            run_rust_musl_builder=''
-          fi
-          $run_rust_musl_builder cargo test --all --all-targets
+        run: cargo +${{ matrix.rust_toolchain_head }} test --all --all-targets --target ${{ matrix.rust_triple }}
         shell: bash
 
       - name: cargo run
-        run: |
-          if [ ${{ matrix.rust_toolchain }} = stable-x86_64-unknown-linux-musl ]; then
-            run_rust_musl_builder='docker run --rm -it -v "$(pwd)":/home/rust/src ekidd/rust-musl-builder'
-          else
-            run_rust_musl_builder=''
-          fi
-          $run_rust_musl_builder cargo run
+        run: cargo +${{ matrix.rust_toolchain_head }} run --target ${{ matrix.rust_triple }}
         shell: bash
