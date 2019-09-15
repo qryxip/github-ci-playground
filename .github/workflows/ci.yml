@@ -106,7 +106,7 @@ jobs:
           elif [ ${{ matrix.rust_triple }} = x86_64-unknown-linux-musl ]; then
             convert_paths="sed 's/\/home\/rust\/src/./g'"
           else
-            convert_path=more
+            convert_paths=more
           fi
           cargo metadata --format-version 1 |
             jq -r '.workspace_members[] as $members | .packages[] | select(.id == $members) | .targets[].src_path' |
