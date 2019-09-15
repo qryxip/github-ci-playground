@@ -65,7 +65,9 @@ jobs:
 
       - name: Display versions
         run: |
-          rustup show
+          cat ~/.bashrc
+          sed 's/:/\n/g' <<< "$PATH"
+          false
           echo -e '\n'
           if [ ${{ matrix.rust_triple }} != x86_64-unknown-linux-musl ]; then
             rustc -Vv
