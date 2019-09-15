@@ -32,9 +32,9 @@ jobs:
       - uses: actions/checkout@v1
       - name: Echo rustup path
         run: |
-          type rustup || false
-          type cargo || false
-          type rustc || false
+          type rustup || true
+          type cargo || true
+          type rustc || true
           if type rustup > /dev/null 2>&1; then
             rustup show
           fi
