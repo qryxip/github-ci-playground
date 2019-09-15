@@ -43,38 +43,28 @@ jobs:
             rustup show
           fi
         shell: bash
-      - name: rustup-init (Windows)
-        run: |
-          curl -sSf --tlsv1.2 --proto =https -o ./rustup-init.exe https://win.rustup.rs/x86_64
-          .\rustup-init.exe -y --no-modify-path --default-toolchain none
-          %USERPROFILE%\.cargo\bin\rustup.exe default ${{ matrix.rust_toolchain }}
-          %USERPROFILE%\.cargo\bin\rustup.exe update ${{ matrix.rust_toolchain }}
-          %USERPROFILE%\.cargo\bin\rustup.exe component add clippy rustfmt
-        if: matrix.os == 'windows-2019'
-      - name: rustup-init (Unix)
+      - name: rustup-init
         run: |
           curl -sSf --tlsv1.2 --proto '=https' -o ./rustup-init https://sh.rustup.rs
           bash ./rustup-init -y --no-modify-path --default-toolchain none
           ~/.cargo/bin/rustup default ${{ matrix.rust_toolchain }}
           ~/.cargo/bin/rustup update ${{ matrix.rust_toolchain }}
           ~/.cargo/bin/rustup component add clippy rustfmt
-        if: matrix.os != 'windows-2019'
+        shell: bash
       - name: Display versions
         run: |
           PATH="$HOME/.cargo/bin:$PATH"
           rustup show
-          echo
+          echo -e '\n'
           rustc -Vv
-          echo
+          echo -e '\n'
           cargo -Vv
-          echo
+          echo -e '\n'
           cargo clippy -V
-          echo
+          echo -e '\n'
           rustfmt -V
-          echo
+          echo -e '\n'
           bash --version
-          echo
-          xargs --version
         shell: bash
       - name: cargo fmt -- --check
         run: |
