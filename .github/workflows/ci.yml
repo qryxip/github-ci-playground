@@ -45,7 +45,7 @@ jobs:
         shell: bash
       - name: Install musl
         run: |
-          apt install -y musl-dev musl-tools
+          sudo apt install -y musl-dev musl-tools
         shell: bash
         if: matrix.rust_toolchain == 'stable-x86_64-unknown-linux-musl'
       - name: rustup-init
