@@ -53,14 +53,13 @@ jobs:
             echo 'export PATH="$HOME/.cargo/bin:$PATH"' > /tmp/rc.bash
           fi
           source /tmp/rc.bash
-          cat /tmp/rc.bash
           rustup update ${{ matrix.rust_version }}-${{ matrix.rust_triple }}
           rustup component add --toolchain ${{ matrix.rust_version }}-${{ matrix.rust_triple }} clippy
           if [ ${{ matrix.rust_triple }} != x86_64-unknown-linux-musl ]; then
             rustup default ${{ matrix.rust_version }}-${{ matrix.rust_triple }}
-            rustup update ${{ matrix.rust_version }}-${{ matrix.rust_triple }}
             rustup component add rustfmt
           fi
+          rustup update ${{ matrix.rust_version }}
         shell: bash
 
       - name: Display versions
