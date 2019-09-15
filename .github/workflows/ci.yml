@@ -32,27 +32,25 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v1
-      - name: Echo rustup path
-        run: |
-          echo '$HOME='"$HOME"
-          echo '$USERPROFILE='"$USERPROFILE"
-          type rustup || true
-          type cargo || true
-          type rustc || true
-          if type rustup > /dev/null 2>&1; then
-            rustup show
-          fi
-        shell: bash
-      - name: dpkg -L
-        run: |
-          sudo dpkg -L build-essential || true
-          sudo dpkg -L musl-dev || true
-          sudo dpkg -L musl-tools || true
-          sudo dpkg -L pkg-config || true
-          sudo dpkg -L libssl-dev || true
-        if: matrix.rust_toolchain == 'stable-x86_64-unknown-linux-musl'
       - name: apt install
-        run: sudo apt install -y build-essential musl-tools pkg-config libssl-dev
+        run: |
+          sudo apt update
+          sudo apt install -y \
+            build-essential \
+            cmake \
+            curl \
+            file \
+            git \
+            musl-dev \
+            musl-tools \
+            libpq-dev \
+            libsqlite-dev \
+            libssl-dev \
+            linux-libc-dev \
+            pkgconf \
+            sudo \
+            xutils-dev \
+            gcc-multilib-arm-linux-gnueabihf
         if: matrix.rust_toolchain == 'stable-x86_64-unknown-linux-musl'
       - name: rustup-init
         run: |
