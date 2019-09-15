@@ -45,7 +45,7 @@ jobs:
           if [ ${{ matrix.rust_triple }} = x86_64-unknown-linux-musl ]; then
             rust_musl_builder="$(docker run -id -v "$(pwd):/home/rust/src:z" ekidd/rust-musl-builder)"
             docker exec "$rust_musl_builder" ls -la
-            docker exec "$rust_musl_builder" sudo chown -R rust:rust /home/rust/src
+            docker exec "$rust_musl_builder" sudo chown -R rust:rust .
             docker exec "$rust_musl_builder" ls -la
             echo 'rustup() {' > /tmp/rc.bash
             echo "  docker exec $rust_musl_builder"' rustup "$@"' >> /tmp/rc.bash
@@ -102,13 +102,15 @@ jobs:
           # A hack to avoid IRC
           cargo check --all --all-targets $target_x86_64_unknown_linux_musl
           if [ ${{ matrix.os }} = windows-2019 ]; then
-            to_unix_path='cygpath -u'
+            convert_paths='xargs cygpath -u'
+          elif [ ${{ matrix.rust_triple }} = x86_64-unknown-linux-musl ]; then
+            convert_paths="sed 's/\/home\/rust\/src/./g'"
           else
-            to_unix_path=echo
+            convert_path=more
           fi
           cargo metadata --format-version 1 |
             jq -r '.workspace_members[] as $members | .packages[] | select(.id == $members) | .targets[].src_path' |
-            xargs -n 1 $to_unix_path |
+            $convert_paths |
             xargs touch
           cargo clippy --all --all-targets $target_x86_64_unknown_linux_musl -- -D warnings
         shell: bash
