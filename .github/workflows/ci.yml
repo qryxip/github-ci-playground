@@ -65,12 +65,13 @@ jobs:
           fi
           source /tmp/rc.bash
           rustup update ${{ matrix.rust_version }}-${{ matrix.rust_triple }}
-          rustup component add --toolchain ${{ matrix.rust_version }}-${{ matrix.rust_triple }} clippy
-          if [ ${{ matrix.rust_triple }} != x86_64-unknown-linux-musl ]; then
+          if [ ${{ matrix.rust_triple }} = x86_64-unknown-linux-musl ]; then
+            rustup component add --toolchain ${{ matrix.rust_version }}-${{ matrix.rust_triple }} clippy
+          else
             rustup default ${{ matrix.rust_version }}-${{ matrix.rust_triple }}
-            rustup component add rustfmt
           fi
           rustup update ${{ matrix.rust_version }}
+          rustup component add --toolchain ${{ matrix.rust_version }} clippy rustfmt
         shell: bash
 
       - name: Display versions
