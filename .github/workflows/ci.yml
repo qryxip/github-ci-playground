@@ -100,7 +100,7 @@ jobs:
         run: |
           source /tmp/rc.bash
           # A hack to avoid IRC
-          cargo check --all --all-targets --all-features $TAEGET_TRIPLE
+          cargo check --all --all-targets --all-features $TARGET_TRIPLE
           if ${{ matrix.os == 'windows-2019' }}; then
             TO_UNIX_PATHS='xargs cygpath -u'
           else
@@ -110,14 +110,13 @@ jobs:
             jq -r '.workspace_members[] as $members | .packages[] | select(.id == $members) | .targets[].src_path' |
             $TO_UNIX_PATHS |
             xargs touch
-          cargo clippy --all --all-targets --all-features $TAEGET_TRIPLE -- -D warnings
+          cargo clippy --all --all-targets --all-features $TARGET_TRIPLE -- -D warnings
         shell: bash
 
       - name: cargo test
         run: |
           source /tmp/rc.bash
-          echo '$TAEGET_TRIPLE='"$TAEGET_TRIPLE"
-          cargo test --all --all-targets --all-features $TAEGET_TRIPLE
+          cargo test --all --all-targets --all-features $TARGET_TRIPLE
         shell: bash
 
       - name: Upload to GitHub Releases
