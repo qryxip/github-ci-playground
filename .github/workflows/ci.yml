@@ -62,14 +62,13 @@ jobs:
             echo "export TARGET_TRIPLE='--target ${{ matrix.rust_target_triple }}'" >> /tmp/rc.bash
           fi
           source /tmp/rc.bash
-          rustup default ${{ matrix.rust_version }}-${{ matrix.rust_host_triple }}
+          rustup update
           if ${{ matrix.rust_target_triple == matrix.rust_host_triple }}; then
             rustup component add rustfmt
           else
             rustup target add ${{ matrix.rust_target_triple }}
           fi
           rustup component add clippy
-          rustup update
         shell: bash
 
       - name: Display versions
@@ -117,6 +116,7 @@ jobs:
       - name: cargo test
         run: |
           source /tmp/rc.bash
+          echo '$TAEGET_TRIPLE='"$TAEGET_TRIPLE"
           cargo test --all --all-targets --all-features $TAEGET_TRIPLE
         shell: bash
 
