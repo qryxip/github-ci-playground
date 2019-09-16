@@ -23,55 +23,54 @@ jobs:
           - rust_version: stable
             rust_triple: x86_64-pc-windows-msvc
             os: windows-2019
+            target_x86_64_unknown_linux_musl: ''
+            release_target: ./target/release/play_github_ci.exe
           - rust_version: stable
             rust_triple: x86_64-pc-windows-gnu
             os: windows-2019
+            target_x86_64_unknown_linux_musl: ''
+            release_target: ./target/release/play_github_ci.exe
           - rust_version: stable
             rust_triple: x86_64-apple-darwin
             os: macOS-10.14
+            target_x86_64_unknown_linux_musl: ''
+            release_target: ./target/release/play_github_ci
           - rust_version: stable
             rust_triple: x86_64-unknown-linux-gnu
             os: ubuntu-18.04
+            target_x86_64_unknown_linux_musl: ''
+            release_target: ./target/release/play_github_ci
           - rust_version: stable
             rust_triple: x86_64-unknown-linux-musl
             os: ubuntu-18.04
+            target_x86_64_unknown_linux_musl: --target x86_64-unknown-linux-musl
+            release_target: ./target/x86_64-unknown-linux-musl/release/play_github_ci
+
     name: ${{ matrix.rust_version }}-${{ matrix.rust_triple }}
     runs-on: ${{ matrix.os }}
+
     steps:
       - uses: actions/checkout@v1
 
+      - name: apt install
+        run: sudo apt install -y musl-tools
+        if: matrix.rust_triple = 'x86_64-unknown-linux-musl'
+
       - name: rustup-init
         run: |
-          if [ ${{ matrix.rust_triple }} = x86_64-unknown-linux-musl ]; then
-            rust_musl_builder="$(docker run -id -v "$(pwd):/home/rust/src:z" ekidd/rust-musl-builder)"
-            docker exec "$rust_musl_builder" ls -la
-            docker exec "$rust_musl_builder" sudo chown -R rust:rust .
-            docker exec "$rust_musl_builder" ls -la
-            echo 'rustup() {' > /tmp/rc.bash
-            echo "  docker exec $rust_musl_builder"' rustup "$@"' >> /tmp/rc.bash
-            echo '}' >> /tmp/rc.bash
-            echo 'cargo() {' >> /tmp/rc.bash
-            echo "  docker exec $rust_musl_builder sudo chown -R rust:rust ." >> /tmp/rc.bash
-            echo "  docker exec $rust_musl_builder"' cargo +${{ matrix.rust_version }} "$@"' >> /tmp/rc.bash
-            echo "  sudo chown -R $(whoami):$(whoami) ." >> /tmp/rc.bash
-            echo '}' >> /tmp/rc.bash
-            echo 'export -f rustup' >> /tmp/rc.bash
-            echo 'export -f cargo' >> /tmp/rc.bash
-            echo "export target_x86_64_unknown_linux_musl='--target x86_64-unknown-linux-musl'" >> /tmp/rc.bash
-          else
-            curl -sSf --tlsv1.2 --proto '=https' -o ./rustup-init https://sh.rustup.rs
-            bash ./rustup-init -y --no-modify-path --default-toolchain none
-            echo 'export PATH="$HOME/.cargo/bin:$PATH"' > /tmp/rc.bash
-          fi
+          curl -sSf --tlsv1.2 --proto '=https' -o ./rustup-init https://sh.rustup.rs
+          bash ./rustup-init -y --no-modify-path --default-toolchain none
+          echo 'export PATH="$HOME/.cargo/bin:$PATH"' > /tmp/rc.bash
           source /tmp/rc.bash
-          rustup update ${{ matrix.rust_version }}-${{ matrix.rust_triple }}
           if [ ${{ matrix.rust_triple }} = x86_64-unknown-linux-musl ]; then
-            rustup component add --toolchain ${{ matrix.rust_version }}-${{ matrix.rust_triple }} clippy
+            rustup target add x86_64-unknown-linux-musl
+            rustup default ${{ matrix.rust_version }}-x86_64-unknown-linux-gnu
           else
             rustup default ${{ matrix.rust_version }}-${{ matrix.rust_triple }}
+            rustup component add rustfmt
           fi
+          rustup component add clippy
           rustup update
-          rustup component add clippy rustfmt
         shell: bash
 
       - name: Display versions
@@ -79,13 +78,13 @@ jobs:
           source /tmp/rc.bash
           rustup show
           echo -e '\n'
+          rustc -Vv
+          echo -e '\n'
+          cargo -Vv
+          echo -e '\n'
+          cargo clippy -V
+          echo -e '\n'
           if [ ${{ matrix.rust_triple }} != x86_64-unknown-linux-musl ]; then
-            rustc -Vv
-            echo -e '\n'
-            cargo -Vv
-            echo -e '\n'
-            cargo clippy -V
-            echo -e '\n'
             rustfmt -V
             echo -e '\n'
           fi
@@ -103,29 +102,33 @@ jobs:
         run: |
           source /tmp/rc.bash
           # A hack to avoid IRC
-          cargo check --all --all-targets $target_x86_64_unknown_linux_musl
+          cargo check --all --all-targets --all-features ${{ target_x86_64_unknown_linux_musl }}
           if [ ${{ matrix.os }} = windows-2019 ]; then
-            convert_paths='xargs cygpath -u'
-          elif [ ${{ matrix.rust_triple }} = x86_64-unknown-linux-musl ]; then
-            convert_paths='sed -e s:/home/rust/src:.:g'
+            to_unix_path='cygpath -u'
           else
-            convert_paths=more
+            to_unix_path=echo
           fi
           cargo metadata --format-version 1 |
             jq -r '.workspace_members[] as $members | .packages[] | select(.id == $members) | .targets[].src_path' |
-            $convert_paths |
+            xargs -n 1 $to_unix_path |
             xargs touch
-          cargo clippy --all --all-targets $target_x86_64_unknown_linux_musl -- -D warnings
+          cargo clippy --all --all-targets --all-features ${{ matrix.target_x86_64_unknown_linux_musl }} -- -D warnings
         shell: bash
 
       - name: cargo test
         run: |
           source /tmp/rc.bash
-          cargo test --all --all-targets $target_x86_64_unknown_linux_musl
+          cargo test --all --all-targets --all-features ${{ target_x86_64_unknown_linux_musl }}
         shell: bash
 
-      - name: cargo run
+      - name: Release
         run: |
           source /tmp/rc.bash
-          cargo run $target_x86_64_unknown_linux_musl
+          cargo build --release --all-features ${{ matrix.target_x86_64_unknown_linux_musl }}
+          STEM=play_github_ci-${{ matrix.rust_version }}-${{ matrix.triple }}
+          git archive "./$STEM.tar" HEAD
+          tar -xf "./$STEM.tar"
+          mv ${{ matrix.release_target }} "./$STEM/"
+          zip -r "./$STEM.zip" "./$STEM"
+          zipinfo "./$STEM.zip"
         shell: bash
