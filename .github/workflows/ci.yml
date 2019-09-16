@@ -125,7 +125,7 @@ jobs:
         run: |
           source /tmp/rc.bash
           cargo build --release --all-features ${{ matrix.target_x86_64_unknown_linux_musl }}
-          STEM=play_github_ci-${{ matrix.rust_version }}-${{ matrix.triple }}
+          STEM=play_github_ci-${{ matrix.rust_version }}-${{ matrix.rust_triple }}
           git archive "./$STEM.tar" HEAD
           tar -xf "./$STEM.tar"
           mv ${{ matrix.release_target }} "./$STEM/"
