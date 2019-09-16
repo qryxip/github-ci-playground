@@ -102,15 +102,15 @@ jobs:
         run: |
           source /tmp/rc.bash
           # A hack to avoid IRC
-          cargo check --all --all-targets --all-features ${{ target_x86_64_unknown_linux_musl }}
+          cargo check --all --all-targets --all-features ${{ matrix.target_x86_64_unknown_linux_musl }}
           if [ ${{ matrix.os }} = windows-2019 ]; then
-            to_unix_path='cygpath -u'
+            to_unix_paths='xargs cygpath -u'
           else
-            to_unix_path=echo
+            to_unix_paths=cat
           fi
           cargo metadata --format-version 1 |
             jq -r '.workspace_members[] as $members | .packages[] | select(.id == $members) | .targets[].src_path' |
-            xargs -n 1 $to_unix_path |
+            $to_unix_paths |
             xargs touch
           cargo clippy --all --all-targets --all-features ${{ matrix.target_x86_64_unknown_linux_musl }} -- -D warnings
         shell: bash
@@ -118,7 +118,7 @@ jobs:
       - name: cargo test
         run: |
           source /tmp/rc.bash
-          cargo test --all --all-targets --all-features ${{ target_x86_64_unknown_linux_musl }}
+          cargo test --all --all-targets --all-features ${{ matrix.target_x86_64_unknown_linux_musl }}
         shell: bash
 
       - name: Release
