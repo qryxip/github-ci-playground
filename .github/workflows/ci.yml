@@ -49,14 +49,10 @@ jobs:
     steps:
       - uses: actions/checkout@v1
 
-      - name: apt install
-        run: sudo apt install -y musl-tools
-        if: matrix.rust_triple == 'x86_64-unknown-linux-musl'
-
       - name: rustup-init
         run: |
           curl -sSf --tlsv1.2 --proto '=https' -o ./rustup-init https://sh.rustup.rs
-          bash ./rustup-init -y --no-modify-path --default-toolchain none # `--default-host` is ignored on Windows
+          bash ./rustup-init -y --no-modify-path --default-toolchain none
           echo 'export PATH="$HOME/.cargo/bin:$PATH"' > /tmp/rc.bash
           if ${{ matrix.rust_target_triple != matrix.rust_host_triple }}; then
             echo "export TARGET_TRIPLE='--target ${{ matrix.rust_target_triple }}'" >> /tmp/rc.bash
@@ -131,7 +127,7 @@ jobs:
           else
             RELEASE_TARGET="./target/${{ matrix.rust_target_triple }}/release/${GITHUB_REPOSITORY#*/}$EXE"
           fi
-          ARTIFACT_STEM="play_github_ci-${GITHUB_REF#refs/tags/}-${{ matrix.rust_triple }}"
+          ARTIFACT_STEM="play_github_ci-${GITHUB_REF#refs/tags/}-${{ matrix.rust_target_triple }}"
           go get github.com/tcnksm/ghr
           cargo build --release --all-features $TARGET_TRIPLE
           git archive -o "./$ARTIFACT_STEM.tar" --prefix "$ARTIFACT_STEM/" HEAD
