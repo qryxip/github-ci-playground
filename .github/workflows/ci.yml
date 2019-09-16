@@ -120,6 +120,8 @@ jobs:
       - name: Release
         run: |
           source /tmp/rc.bash
+          go get github.com/tsnksm/ghr
+          ~/go/bin/ghr --version
           cargo build --release --all-features ${{ matrix.target_x86_64_unknown_linux_musl }}
           STEM=play_github_ci-${{ matrix.rust_triple }}
           git archive -o "./$STEM.tar" --prefix "$STEM/" HEAD
