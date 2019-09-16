@@ -56,7 +56,7 @@ jobs:
       - name: rustup-init
         run: |
           curl -sSf --tlsv1.2 --proto '=https' -o ./rustup-init https://sh.rustup.rs
-          bash ./rustup-init -y --no-modify-path --default-toolchain ${{ matrix.rust_version }}-${{ matrix.rust_host_triple }}
+          bash ./rustup-init -y --no-modify-path --default-host ${{ matrix.rust_host_triple }} --default-toolchain ${{ matrix.rust_version }}
           echo 'export PATH="$HOME/.cargo/bin:$PATH"' > /tmp/rc.bash
           if ${{ matrix.rust_target_triple != matrix.rust_host_triple }}; then
             echo "export TARGET_TRIPLE='--target ${{ matrix.rust_target_triple }}'" >> /tmp/rc.bash
