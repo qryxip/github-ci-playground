@@ -54,7 +54,7 @@ jobs:
 
       - name: apt install
         run: sudo apt install -y musl-tools
-        if: matrix.rust_triple = 'x86_64-unknown-linux-musl'
+        if: matrix.rust_triple == 'x86_64-unknown-linux-musl'
 
       - name: rustup-init
         run: |
