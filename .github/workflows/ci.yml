@@ -23,22 +23,18 @@ jobs:
           - rust_version: stable
             rust_triple: x86_64-pc-windows-msvc
             os: windows-2019
-            target_x86_64_unknown_linux_musl: ''
             release_target: ./target/release/play_github_ci.exe
           - rust_version: stable
             rust_triple: x86_64-pc-windows-gnu
             os: windows-2019
-            target_x86_64_unknown_linux_musl: ''
             release_target: ./target/release/play_github_ci.exe
           - rust_version: stable
             rust_triple: x86_64-apple-darwin
             os: macOS-10.14
-            target_x86_64_unknown_linux_musl: ''
             release_target: ./target/release/play_github_ci
           - rust_version: stable
             rust_triple: x86_64-unknown-linux-gnu
             os: ubuntu-18.04
-            target_x86_64_unknown_linux_musl: ''
             release_target: ./target/release/play_github_ci
           - rust_version: stable
             rust_triple: x86_64-unknown-linux-musl
@@ -126,7 +122,7 @@ jobs:
           source /tmp/rc.bash
           cargo build --release --all-features ${{ matrix.target_x86_64_unknown_linux_musl }}
           STEM=play_github_ci-${{ matrix.rust_version }}-${{ matrix.rust_triple }}
-          git archive "./$STEM.tar" HEAD
+          git archive -o "./$STEM.tar" --prefix "$STEM" HEAD
           tar -xf "./$STEM.tar"
           mv ${{ matrix.release_target }} "./$STEM/"
           zip -r "./$STEM.zip" "./$STEM"
