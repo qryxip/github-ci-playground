@@ -26,27 +26,22 @@ jobs:
             rust_target_triple: x86_64-pc-windows-msvc
             rust_host_triple: x86_64-pc-windows-msvc
             os: windows-2019
-            release_target: ./target/release/play_github_ci.exe
           - rust_version: stable
             rust_target_triple: x86_64-pc-windows-gnu
             rust_host_triple: x86_64-pc-windows-gnu
             os: windows-2019
-            release_target: ./target/release/play_github_ci.exe
           - rust_version: stable
             rust_target_triple: x86_64-apple-darwin
             rust_host_triple: x86_64-apple-darwin
             os: macOS-10.14
-            release_target: ./target/release/play_github_ci
           - rust_version: stable
             rust_target_triple: x86_64-unknown-linux-gnu
             rust_host_triple: x86_64-unknown-linux-gnu
             os: ubuntu-18.04
-            release_target: ./target/release/play_github_ci
           - rust_version: stable
             rust_target_triple: x86_64-unknown-linux-musl
             rust_host_triple: x86_64-unknown-linux-gnu
             os: ubuntu-18.04
-            release_target: ./target/x86_64-unknown-linux-musl/release/play_github_ci
 
     name: ${{ matrix.rust_version }}-${{ matrix.rust_target_triple }}
     runs-on: ${{ matrix.os }}
@@ -64,7 +59,7 @@ jobs:
           bash ./rustup-init -y --no-modify-path --default-toolchain ${{ matrix.rust_version }}-${{ matrix.rust_host_triple }}
           echo 'export PATH="$HOME/.cargo/bin:$PATH"' > /tmp/rc.bash
           if ${{ matrix.rust_target_triple != matrix.rust_host_triple }}; then
-            echo "TARGET_TRIPLE='--target ${{ matrix.rust_target_triple }}'" >> /tmp/rc.bash
+            echo "export TARGET_TRIPLE='--target ${{ matrix.rust_target_triple }}'" >> /tmp/rc.bash
           fi
           source /tmp/rc.bash
           rustup default ${{ matrix.rust_version }}-${{ matrix.rust_host_triple }}
@@ -125,7 +120,7 @@ jobs:
           cargo test --all --all-targets --all-features $TAEGET_TRIPLE
         shell: bash
 
-      - name: Release
+      - name: Upload to GitHub Releases
         run: |
           source /tmp/rc.bash
           if ${{ matrix.rust_target_triple == 'windows-2019' }}; then
@@ -134,15 +129,15 @@ jobs:
           if ${{ matrix.rust_target_triple == matrix.rust_host_triple }}; then
             RELEASE_TARGET="./target/release/${GITHUB_REPOSITORY#*/}$EXE"
           else
-            RELEASE_TARGET="./target/${{ matrix.rust_target_triple }}/release/${GITHUB_REPOSITORY#*/}$EXE"'
+            RELEASE_TARGET="./target/${{ matrix.rust_target_triple }}/release/${GITHUB_REPOSITORY#*/}$EXE"
           fi
-          ARTIFACT_STEM=play_github_ci-${{ matrix.rust_triple }}
+          ARTIFACT_STEM="play_github_ci-${GITHUB_REF#refs/tags/}-${{ matrix.rust_triple }}"
           go get github.com/tcnksm/ghr
           cargo build --release --all-features $TARGET_TRIPLE
           git archive -o "./$ARTIFACT_STEM.tar" --prefix "$ARTIFACT_STEM/" HEAD
           tar -xf "./$ARTIFACT_STEM.tar"
-          mv ${{ matrix.release_target }} "./$ARTIFACT_STEM/"
-          if [ ${{ matrix.os }} = windows-2019 ]; then
+          mv "$RELEASE_TARGET" "./$ARTIFACT_STEM/"
+          if ${{ matrix.os == 'windows-2019' }}; then
             ARTIFACT="./$ARTIFACT_STEM.zip"
             7z a "$ARTIFACT" "./$ARTIFACT_STEM"
             zipinfo "$ARTIFACT"
