@@ -55,14 +55,21 @@ jobs:
 
       - name: rustup-init
         run: |
+          sed -e 's/:/\n/g' <<< "$PATH"
           if ${{ matrix.os == 'windows-2019' }}; then
-            rm -rf /c/Rust ~/.rustup ~/.cargo
-          elif ${{ matrix.os == 'ubuntu-18.04' }}; then
-            sudo rm -rf /usr/share/rust ~/.rustup ~/.cargo
+            if ${{ matrix.rust_target_triple == 'x86_64-pc-windows-gnu' }}; then
+              # cp /c/Windows/SYSTEM32/ntdll.dll "$(rustc --print sysroot)/lib/rustlib/x86_64-pc-windows-gnu/lib/"
+              :
+            fi
+            touch /tmp/rc.bash
+          else
+            if ${{ matrix.os == 'ubuntu-18.04' }}; then
+              sudo rm -rf /usr/share/rust ~/.rustup ~/.cargo
+            fi
+            curl -sSf --tlsv1.2 --proto '=https' -o ./rustup-init https://sh.rustup.rs
+            bash ./rustup-init -y --no-modify-path --default-toolchain none
+            echo 'export PATH="$HOME/.cargo/bin:$PATH"' > /tmp/rc.bash
           fi
-          curl -sSf --tlsv1.2 --proto '=https' -o ./rustup-init https://sh.rustup.rs
-          bash ./rustup-init -y --no-modify-path --default-toolchain none
-          echo 'export PATH="$HOME/.cargo/bin:$PATH"' > /tmp/rc.bash
           if ${{ matrix.rust_target_triple != matrix.rust_host_triple }}; then
             echo 'export PKG_CONFIG_ALLOW_CROSS=1' >> /tmp/rc.bash
             echo "export TARGET_TRIPLE='--target ${{ matrix.rust_target_triple }}'" >> /tmp/rc.bash
@@ -72,8 +79,6 @@ jobs:
           rustup update
           if ${{ matrix.rust_target_triple == matrix.rust_host_triple }}; then
             rustup component add rustfmt
-          elif ${{ matrix.rust_target_triple == 'x86_64-pc-windows-gnu' }}; then
-            cp /c/Windows/SYSTEM32/ntdll.dll "$(rustc --print sysroot)/lib/rustlib/x86_64-pc-windows-gnu/lib/"
           else
             rustup target add ${{ matrix.rust_target_triple }}
           fi
@@ -126,12 +131,6 @@ jobs:
         run: |
           source /tmp/rc.bash
           cargo test --all --all-targets --all-features $TARGET_TRIPLE
-        shell: bash
-
-      - name: cargo run
-        run: |
-          source /tmp/rc.bash
-          cargo run
         shell: bash
 
       - name: Upload to GitHub Releases
