@@ -13,64 +13,63 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        rust_version:
+        rust_channel:
           - stable
         rust_target_triple:
+          # https://internals.rust-lang.org/t/demote-windows-mingw-targets-to-lower-tiers-or-re-enable-their-tests/10536
           - x86_64-pc-windows-msvc
-          - x86_64-pc-windows-gnu
           - x86_64-apple-darwin
           - x86_64-unknown-linux-gnu
-          - x86_64-unknown-linux-musl
+          - i686-pc-windows-msvc
+          - i686-apple-darwin
+          - i686-unknown-linux-gnu
         include:
-          - rust_version: stable
+          - rust_channel: stable
             rust_target_triple: x86_64-pc-windows-msvc
             rust_host_triple: x86_64-pc-windows-msvc
             os: windows-2019
-          - rust_version: stable
-            rust_target_triple: x86_64-pc-windows-gnu
-            rust_host_triple: x86_64-pc-windows-gnu
-            os: windows-2019
-          - rust_version: stable
+          - rust_channel: stable
             rust_target_triple: x86_64-apple-darwin
             rust_host_triple: x86_64-apple-darwin
             os: macOS-10.14
-          - rust_version: stable
+          - rust_channel: stable
             rust_target_triple: x86_64-unknown-linux-gnu
             rust_host_triple: x86_64-unknown-linux-gnu
             os: ubuntu-18.04
-          - rust_version: stable
-            rust_target_triple: x86_64-unknown-linux-musl
+          - rust_channel: stable
+            rust_target_triple: x86_64-pc-windows-msvc
+            rust_host_triple: x86_64-pc-windows-msvc
+            os: windows-2019
+          - rust_channel: stable
+            rust_target_triple: x86_64-apple-darwin
+            rust_host_triple: x86_64-apple-darwin
+            os: macOS-10.14
+          - rust_channel: stable
+            rust_target_triple: x86_64-unknown-linux-gnu
             rust_host_triple: x86_64-unknown-linux-gnu
             os: ubuntu-18.04
 
-    name: ${{ matrix.rust_version }}-${{ matrix.rust_target_triple }}
+    name: ${{ matrix.rust_channel }}-${{ matrix.rust_target_triple }}
     runs-on: ${{ matrix.os }}
 
     steps:
       - uses: actions/checkout@v1
 
       - name: apt-get install
-        run: sudo apt-get install -y libssl-dev musl-tools
-        if: matrix.rust_target_triple == 'x86_64-unknown-linux-musl'
+        run: sudo apt-get install gcc-multilib
+        if: matrix.rust_target_triple == 'i686-unknown-linux-gnu'
 
       - name: rustup-init
         run: |
-          sed -e 's/:/\n/g' <<< "$PATH"
           curl -sSf --tlsv1.2 --proto '=https' -o ./rustup-init https://sh.rustup.rs
-          bash ./rustup-init -y --no-modify-path --default-toolchain none
+          bash ./rustup-init -y --no-modify-path --default-host ${{ matrix.rust_host_triple }} --default-toolchain ${{ matrix.rust_channel }}
           echo 'export PATH="$HOME/.cargo/bin:$PATH"' > /tmp/rc.bash
           if ${{ matrix.rust_target_triple != matrix.rust_host_triple }}; then
             echo 'export PKG_CONFIG_ALLOW_CROSS=1' >> /tmp/rc.bash
             echo "export TARGET_TRIPLE='--target ${{ matrix.rust_target_triple }}'" >> /tmp/rc.bash
           fi
-          if ${{ matrix.rust_target_triple == 'x86_64-unknown-linux-musl' }}; then
-            dpkg -L libssl-dev | grep lib || true
-            dpkg -L libssl-dev | grep include || true
-            echo 'export OPENSSL_LIB_DIR=/usr/lib/x86_64-linux-gnu/' >> /tmp/rc.bash
-            echo 'export OPENSSL_INCLUDE_DIR=/usr/include/x86_64-linux-gnu/' >> /tmp/rc.bash
-          fi
           source /tmp/rc.bash
-          rustup default ${{ matrix.rust_version }}-${{ matrix.rust_host_triple }}
+          rustup default ${{ matrix.rust_channel }}-${{ matrix.rust_host_triple }}
           rustup update
           if ${{ matrix.rust_target_triple == matrix.rust_host_triple }}; then
             rustup component add rustfmt
@@ -78,9 +77,6 @@ jobs:
             rustup target add ${{ matrix.rust_target_triple }}
           fi
           rustup component add clippy
-          if ${{ matrix.rust_target_triple == 'x86_64-pc-windows-gnu' }}; then
-            cp /c/Windows/SYSTEM32/ntdll.dll "$(rustc --print sysroot)/lib/rustlib/x86_64-pc-windows-gnu/lib/"
-          fi
         shell: bash
 
       - name: Display versions
@@ -129,6 +125,12 @@ jobs:
         run: |
           source /tmp/rc.bash
           cargo test --all --all-targets --all-features $TARGET_TRIPLE
+        shell: bash
+
+      - name: cargo build
+        run: |
+          source /tmp/rc.bash
+          cargo build --release --all-features $TARGET_TRIPLE
         shell: bash
 
       - name: Upload to GitHub Releases

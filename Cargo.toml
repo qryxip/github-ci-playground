@@ -6,8 +6,6 @@ edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
-[target.'x86_64-pc-windows-gnu'.dependencies]
-winapi = "0.3.8"
-
-[target.'x86_64-unknown-linux-musl'.dependencies]
+[dependencies]
+curl-sys = "0.4.21"
 openssl-sys = "0.9.49"
