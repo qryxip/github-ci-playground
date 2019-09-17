@@ -55,7 +55,6 @@ jobs:
 
       - name: rustup-init
         run: |
-          cat ~/.bashrc
           sed -e 's/:/\n/g' <<< "$PATH"
           curl -sSf --tlsv1.2 --proto '=https' -o ./rustup-init https://sh.rustup.rs
           bash ./rustup-init -y --no-modify-path --default-toolchain none
@@ -65,7 +64,10 @@ jobs:
             echo "export TARGET_TRIPLE='--target ${{ matrix.rust_target_triple }}'" >> /tmp/rc.bash
           fi
           if ${{ matrix.rust_target_triple == 'x86_64-unknown-linux-musl' }}; then
+            dpkg -L libssl-dev | grep lib || true
+            dpkg -L libssl-dev | grep include || true
             echo 'export OPENSSL_LIB_DIR=/usr/lib/x86_64-linux-gnu/' >> /tmp/rc.bash
+            echo 'export OPENSSL_INCLUDE_DIR=/usr/include/x86_64-linux-gnu/' >> /tmp/rc.bash
           fi
           source /tmp/rc.bash
           rustup default ${{ matrix.rust_version }}-${{ matrix.rust_host_triple }}
