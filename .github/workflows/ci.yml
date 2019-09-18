@@ -69,8 +69,12 @@ jobs:
         run: |
           sudo dpkg --add-architecture i386
           sudo apt-get update
-          sudo apt-get install libssl-dev:i386 # gcc-multilib
+          sudo apt-get install gcc-multilib libssl-dev:i386
         if: matrix.rust_target_triple == 'i686-unknown-linux-gnu'
+
+      - name: brew install
+        run: brew install openssl
+        if: matrix.rust_target_triple == 'i686-apple-darwin'
 
       - name: rustup-init
         run: |
@@ -116,6 +120,7 @@ jobs:
           which pkg-config || true
           echo -e '\n'
           which openssl || true
+          openssl version || true
         shell: bash
 
       - name: cargo fmt -- --check
