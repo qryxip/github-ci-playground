@@ -57,6 +57,7 @@ jobs:
 
       - name: apt-get install
         run: |
+          sudo dpkg --add-architecture i386
           sudo apt-get install libssl-dev:i386 gcc-multilib
           echo
           dpkg -L libssl-dev:i386 | grep lib
