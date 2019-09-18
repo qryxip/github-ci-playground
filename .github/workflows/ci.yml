@@ -18,15 +18,21 @@ jobs:
         rust_target_triple:
           # https://internals.rust-lang.org/t/demote-windows-mingw-targets-to-lower-tiers-or-re-enable-their-tests/10536
           - x86_64-pc-windows-msvc
+          - x86_64-pc-windows-gnu
           - x86_64-apple-darwin
           - x86_64-unknown-linux-gnu
           - i686-pc-windows-msvc
+          - i686-pc-windows-gnu
           - i686-apple-darwin
           - i686-unknown-linux-gnu
         include:
           - rust_channel: stable
             rust_target_triple: x86_64-pc-windows-msvc
             rust_host_triple: x86_64-pc-windows-msvc
+            os: windows-2019
+          - rust_channel: stable
+            rust_target_triple: x86_64-pc-windows-gnu
+            rust_host_triple: x86_64-pc-windows-gnu
             os: windows-2019
           - rust_channel: stable
             rust_target_triple: x86_64-apple-darwin
@@ -39,6 +45,10 @@ jobs:
           - rust_channel: stable
             rust_target_triple: i686-pc-windows-msvc
             rust_host_triple: i686-pc-windows-msvc
+            os: windows-2019
+          - rust_channel: stable
+            rust_target_triple: i686-pc-windows-gnu
+            rust_host_triple: i686-pc-windows-gnu
             os: windows-2019
           - rust_channel: stable
             rust_target_triple: i686-apple-darwin
@@ -56,7 +66,7 @@ jobs:
       - uses: actions/checkout@v1
 
       - name: apt-get install
-        run: sudo apt-get install libssl-dev gcc-multilib
+        run: sudo apt-get install gcc-multilib
         if: matrix.rust_target_triple == 'i686-unknown-linux-gnu'
 
       - name: rustup-init
@@ -68,8 +78,10 @@ jobs:
             echo 'export PKG_CONFIG_ALLOW_CROSS=1' >> /tmp/rc.bash
             echo "export TARGET_TRIPLE='--target ${{ matrix.rust_target_triple }}'" >> /tmp/rc.bash
           fi
-          if ${{ matrix.os == 'windows-2019' }}; then
+          if ${{ endsWith(matrix.os, 'windows-msvc') }}; then
             echo "export OPENSSL_DIR='C:\Program Files\OpenSSL'" >> /tmp/rc.bash
+          elif ${{ endsWith(matrix.os, 'windows-gnu') }}; then
+            echo "export OPENSSL_DIR='C:\Program Files (x86)\Subversion\bin\openssl.exe'" >> /tmp/rc.bash
           fi
           source /tmp/rc.bash
           rustup default ${{ matrix.rust_channel }}-${{ matrix.rust_host_triple }}
@@ -135,6 +147,7 @@ jobs:
           source /tmp/rc.bash
           cargo build --release --all-features $TARGET_TRIPLE
         shell: bash
+        if: 'false'
 
       - name: Upload to GitHub Releases
         run: |
