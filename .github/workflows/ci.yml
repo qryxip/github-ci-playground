@@ -32,7 +32,7 @@ jobs:
             os: windows-2019
           - rust_channel: stable
             rust_target_triple: x86_64-pc-windows-gnu
-            rust_host_triple: x86_64-pc-windows-msvc
+            rust_host_triple: x86_64-pc-windows-gnu
             os: windows-2019
           - rust_channel: stable
             rust_target_triple: x86_64-apple-darwin
@@ -48,7 +48,7 @@ jobs:
             os: windows-2019
           - rust_channel: stable
             rust_target_triple: i686-pc-windows-gnu
-            rust_host_triple: x86_64-pc-windows-msvc
+            rust_host_triple: x86_64-pc-windows-gnu
             os: windows-2019
           - rust_channel: stable
             rust_target_triple: i686-apple-darwin
@@ -72,8 +72,12 @@ jobs:
           sudo apt-get install gcc-multilib libssl-dev:i386
         if: matrix.rust_target_triple == 'i686-unknown-linux-gnu'
 
-      - name: brew install
-        run: brew install openssl
+      - name: Build OpenSSL (i686-apple-darwin)
+        run: |
+          curl https://www.openssl.org/source/openssl-1.1.1d.tar.gz | tar xz
+          cd ./openssl-1.1.1d
+          ./Configure darwin-i386-cc
+          make install
         if: matrix.rust_target_triple == 'i686-apple-darwin'
 
       - name: rustup-init
