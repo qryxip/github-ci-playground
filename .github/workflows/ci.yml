@@ -57,9 +57,14 @@ jobs:
 
       - name: apt-get install
         run: |
-          dpkg -L libssl-dev | grep lib
-          dpkg -L libssl-dev | grep include
-          sudo apt-get install gcc-multilib
+          sudo apt-get install libssl-dev:i386 gcc-multilib
+          echo
+          dpkg -L libssl-dev:i386 | grep lib
+          echo
+          dpkg -L libssl-dev:i386 | grep include
+          echo
+          dpkg -L gcc-multilib | grep ssl
+          echo
         if: matrix.rust_target_triple == 'i686-unknown-linux-gnu'
 
       - name: rustup-init
