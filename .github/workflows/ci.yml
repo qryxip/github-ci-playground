@@ -44,11 +44,11 @@ jobs:
             os: ubuntu-18.04
           - rust_channel: stable
             rust_target_triple: i686-pc-windows-msvc
-            rust_host_triple: x86_64-pc-windows-msvc
+            rust_host_triple: i686-pc-windows-msvc
             os: windows-2019
           - rust_channel: stable
             rust_target_triple: i686-pc-windows-gnu
-            rust_host_triple: x86_64-pc-windows-gnu
+            rust_host_triple: i686-pc-windows-gnu
             os: windows-2019
           - rust_channel: stable
             rust_target_triple: i686-apple-darwin
@@ -56,7 +56,7 @@ jobs:
             os: macOS-10.14
           - rust_channel: stable
             rust_target_triple: i686-unknown-linux-gnu
-            rust_host_triple: x86_64-unknown-linux-gnu
+            rust_host_triple: i686-unknown-linux-gnu
             os: ubuntu-18.04
 
     name: ${{ matrix.rust_channel }}-${{ matrix.rust_target_triple }}
@@ -65,18 +65,18 @@ jobs:
     steps:
       - uses: actions/checkout@v1
 
-      - name: apt-get install
+      - name: apt-get install (stable-i686-unknown-linux-gnu)
         run: |
           sudo dpkg --add-architecture i386
           sudo apt-get update
           sudo apt-get install gcc-multilib libssl-dev:i386
         if: matrix.rust_target_triple == 'i686-unknown-linux-gnu'
 
-      - name: Build OpenSSL (i686-apple-darwin)
+      - name: Build OpenSSL (stable-i686-apple-darwin)
         run: |
           curl https://www.openssl.org/source/openssl-1.1.1d.tar.gz | tar xz
           cd ./openssl-1.1.1d
-          ./Configure darwin-i386-cc
+          ./Configure darwin-i386-cc -shared
           make install
         if: matrix.rust_target_triple == 'i686-apple-darwin'
 
