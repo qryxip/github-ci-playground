@@ -53,7 +53,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y wine-stable
-        if: matrix.os == ubuntu-18.04 && contains(matrix.rust_target_triple, 'pc-windows')
+        if: matrix.os == 'ubuntu-18.04' && contains(matrix.rust_target_triple, 'pc-windows')
 
       - name: rustup-init
         run: |
@@ -159,7 +159,7 @@ jobs:
           else
             DEBUG_TARGET="./target/${{ matrix.rust_target_triple }}/debug/${GITHUB_REPOSITORY#*/}$EXE"
           fi
-          if ${{ matrix.os == ubuntu-18.04 && contains(matrix.rust_target_triple, 'pc-windows') }}; then
+          if ${{ matrix.os == 'ubuntu-18.04' && contains(matrix.rust_target_triple, 'pc-windows') }}; then
             wine "$DEBUG_TARGET"
           else
             "$DEBUG_TARGET"
