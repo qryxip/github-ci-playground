@@ -81,7 +81,7 @@ jobs:
             curl -sSfL "https://github.com/rust-embedded/cross/releases/download/v$CROSS_VERSION/cross-v$CROSS_VERSION-x86_64-unknown-linux-musl.tar.gz" | tar xz
             mv ./cross ~/.cargo/bin/
           else
-            cargo install --locked --version "$CROSS_VERSION" cross
+            false
           fi
           if [ -f ./ci/Dockerfile.${{ matrix.rust_target_triple }} ]; then
             docker build -t ci/${{ matrix.rust_target_triple }} -f ci/Dockerfile.${{ matrix.rust_target_triple }} .
@@ -148,20 +148,20 @@ jobs:
           "$CARGO_CMD" test --all --all-targets --all-features $TARGET_TRIPLE
         shell: bash
 
-      - name: Run
+      - name: cargo run
         run: |
           source /tmp/rc.bash
-          if ${{ contains(matrix.rust_target_triple, 'pc-windows') }}; then
-            EXE=.exe
-          fi
-          if ${{ matrix.rust_target_triple == matrix.rust_host_triple }}; then
-            DEBUG_TARGET="./target/debug/${GITHUB_REPOSITORY#*/}$EXE"
-          else
-            DEBUG_TARGET="./target/${{ matrix.rust_target_triple }}/debug/${GITHUB_REPOSITORY#*/}$EXE"
-          fi
           if ${{ matrix.os == 'ubuntu-18.04' && contains(matrix.rust_target_triple, 'pc-windows') }}; then
-            wine "$DEBUG_TARGET"
+            cross run --all-features --target ${{ matrix.rust_target_triple }}
           else
+            if ${{ contains(matrix.rust_target_triple, 'pc-windows') }}; then
+                EXE=.exe
+            fi
+            if ${{ matrix.rust_target_triple == matrix.rust_host_triple }}; then
+                DEBUG_TARGET="./target/debug/${GITHUB_REPOSITORY#*/}$EXE"
+            else
+                DEBUG_TARGET="./target/${{ matrix.rust_target_triple }}/debug/${GITHUB_REPOSITORY#*/}$EXE"
+            fi
             "$DEBUG_TARGET"
           fi
         shell: bash
